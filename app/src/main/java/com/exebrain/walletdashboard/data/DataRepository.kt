@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.flow
 
 object DataRepository {
 
-    suspend fun loadCurrenciesList(): Flow<CurrenciesListRes?> = flow {
+    fun loadCurrenciesList(): Flow<CurrenciesListRes?> = flow {
         val result = JsonUtils.parseJsonFromFile<CurrenciesListRes>("currencies.json")
         emit(result)
     }

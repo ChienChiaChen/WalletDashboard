@@ -21,9 +21,7 @@ fun WalletScreen(
     viewModel: WalletViewModel = viewModel(),
     innerPadding: PaddingValues
 ) {
-
-    val balance by viewModel.balance.collectAsState()
-    val assets by viewModel.assets.collectAsState()
+    val walletUiState by viewModel.walletUiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -31,7 +29,7 @@ fun WalletScreen(
             .padding(innerPadding)
             .background(Color(0xFF003459))
     ) {
-        BalanceDisplay(balance)
+        BalanceDisplay(walletUiState.balance)
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -39,7 +37,7 @@ fun WalletScreen(
                 .padding(top = 8.dp),
             color = Color.White
         ) {
-            CryptoAssetList(assets = assets)
+            CryptoAssetList(assets = walletUiState.assets)
         }
     }
 }
