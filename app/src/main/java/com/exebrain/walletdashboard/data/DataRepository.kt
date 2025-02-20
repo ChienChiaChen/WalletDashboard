@@ -18,6 +18,7 @@ object DataRepository {
         defaultValue: T
     ): Flow<T> = flow {
         Log.d("jason", "Loading: $fileName")
+        // To mock error case. like under no network.
         val result = if (!NetUtils.isNetworkAvailable()) {
             defaultValue
         } else {
