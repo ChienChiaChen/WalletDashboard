@@ -5,9 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.exebrain.walletdashboard.data.DataRepository
 import com.exebrain.walletdashboard.ui.wallet.data.CryptoAssetModel
 import com.exebrain.walletdashboard.utils.MathUtils
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 
 class WalletViewModel : ViewModel() {
@@ -20,6 +23,15 @@ class WalletViewModel : ViewModel() {
         exchangeRatesFlow,
         walletBalanceFlow
     ) { currencies, exchangeRates, walletBalance ->
+        // If any data source has ok set to false, return an error state.
+        if (!currencies.ok || !exchangeRates.ok || !walletBalance.ok) {
+            return@combine WalletUiState(
+                balance = "0.00",
+                assets = emptyList(),
+                errorMessage = "Loading failed"
+            )
+        }
+
         // Calculate the corresponding USD value for each asset and convert it into a CryptoAssetModel
         val cryptoAssets = walletBalance?.wallet?.mapNotNull { walletItem ->
             val currencyInfo =
@@ -28,7 +40,6 @@ class WalletViewModel : ViewModel() {
                 it.from_currency == walletItem.currency && it.to_currency == "USD"
             }
             val usdValue = MathUtils.calculateUsdValue(walletItem.amount, exchangeRateTier)
-
             currencyInfo?.let {
                 CryptoAssetModel(
                     iconUrl = it.colorful_image_url,
@@ -47,5 +58,11 @@ class WalletViewModel : ViewModel() {
             balance = String.format("%.2f", totalUsdBalance),
             assets = cryptoAssets
         )
-    }.stateIn(viewModelScope, SharingStarted.Lazily, WalletUiState("", emptyList()))
+    }.distinctUntilChanged()
+        .flowOn(Dispatchers.IO)
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            WalletUiState("", emptyList())
+        )
 }
